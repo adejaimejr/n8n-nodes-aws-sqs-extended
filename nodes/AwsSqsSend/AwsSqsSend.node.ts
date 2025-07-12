@@ -53,7 +53,7 @@ export class AwsSqsSend implements INodeType {
 				name: 'sendInputData',
 				type: 'boolean',
 				default: true,
-				description: 'Whether to send the input data as message body',
+				description: 'Whether to send the data the node receives as JSON to SQS',
 			},
 			{
 				displayName: 'Message Body',
@@ -293,16 +293,18 @@ export class AwsSqsSend implements INodeType {
 
 				const result = await sqs.sendMessage(params).promise();
 
+				const outputData: any = {
+					MessageId: result.MessageId,
+					MD5OfMessageBody: result.MD5OfMessageBody,
+				};
+
+				// Add SequenceNumber for FIFO queues
+				if (result.SequenceNumber) {
+					outputData.SequenceNumber = result.SequenceNumber;
+				}
+
 				returnData.push({
-					json: {
-						success: true,
-						operation: 'sendMessage',
-						queueUrl,
-						messageId: result.MessageId,
-						requestId: result.$response?.requestId,
-						timestamp: new Date().toISOString(),
-						messageBody: sendInputData ? 'Input data sent' : messageBody,
-					},
+					json: outputData,
 				});
 
 			} catch (error) {
@@ -310,10 +312,7 @@ export class AwsSqsSend implements INodeType {
 				if (this.continueOnFail()) {
 					returnData.push({
 						json: {
-							success: false,
 							error: errorMessage,
-							operation: 'sendMessage',
-							timestamp: new Date().toISOString(),
 						},
 					});
 					continue;
