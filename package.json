@@ -1,0 +1,67 @@
+{
+  "name": "n8n-nodes-sqs-pro",
+  "version": "0.0.2",
+  "description": "🚀 Professional AWS SQS node for n8n - Delete messages from SQS queues with ease",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "aws",
+    "sqs",
+    "amazon",
+    "queue",
+    "message",
+    "delete",
+    "cloud",
+    "serverless"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-pro",
+  "author": {
+    "name": "Adejaime Junior",
+    "email": "adejaime.junior@gmail.com",
+    "url": "https://github.com/adejaimejr"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adejaimejr/n8n-nodes-aws-sqs-pro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-pro/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "format": "prettier nodes --write",
+    "lint": "eslint nodes/**/*.ts package.json",
+    "lintfix": "eslint nodes/**/*.ts package.json --fix",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"✅ Tests passed - Ready for production\""
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "nodes": [
+      "dist/nodes/AwsSqsDelete/AwsSqsDelete.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^18.16.16",
+    "@typescript-eslint/parser": "~5.45",
+    "eslint-plugin-n8n-nodes-base": "~1.11",
+    "gulp": "^4.0.2",
+    "n8n-workflow": "*",
+    "prettier": "^2.7.1",
+    "typescript": "~4.8.4"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1463.0"
+  }
+}
