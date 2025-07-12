@@ -52,7 +52,7 @@ export class AwsSqsSend implements INodeType {
 				displayName: 'Send Input Data',
 				name: 'sendInputData',
 				type: 'boolean',
-				default: false,
+				default: true,
 				description: 'Whether to send the input data as message body',
 			},
 			{
@@ -80,7 +80,7 @@ export class AwsSqsSend implements INodeType {
 				displayName: 'Message Deduplication ID',
 				name: 'messageDeduplicationId',
 				type: 'string',
-				default: '{{ Date.now().toString() }}',
+				default: '={{ Date.now().toString() }}',
 				description: 'Message deduplication ID for FIFO queues (optional if content-based deduplication is enabled)',
 				placeholder: 'unique-message-id',
 			},
