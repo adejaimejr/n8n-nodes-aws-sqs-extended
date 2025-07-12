@@ -15,8 +15,8 @@ import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand, ListQueuesComma
 
 export class AwsSqsTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Trigger',
-		name: 'awsSqsFullTrigger',
+		displayName: 'AWS SQS Queue Monitor',
+		name: 'awsSqsExtendedTrigger',
 		icon: 'file:awssqs-trigger.svg',
 		group: ['trigger'],
 		version: 1,

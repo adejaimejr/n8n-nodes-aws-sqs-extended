@@ -1,7 +1,7 @@
 {
-  "name": "n8n-nodes-aws-sqs-full",
-  "version": "0.0.6",
-  "description": "🚀 Complete AWS SQS package for n8n - Send, Delete & Trigger messages from SQS queues with ease. Full package with 3 professional nodes.",
+  "name": "n8n-nodes-aws-sqs-extended",
+  "version": "0.0.1",
+  "description": "🔧 Extended AWS SQS operations for n8n - Delete Messages, Queue Monitoring & Batch Operations. Complements the native AWS SQS node.",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -10,17 +10,17 @@
     "amazon",
     "queue",
     "message",
-    "send",
     "delete",
     "trigger",
+    "monitor",
     "cloud",
     "serverless",
-    "full",
-    "complete",
+    "extended",
+    "community",
     "package"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-full",
+  "homepage": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-extended",
   "author": {
     "name": "Adejaime Junior",
     "email": "adejaime.junior@gmail.com",
@@ -28,10 +28,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adejaimejr/n8n-nodes-aws-sqs-full.git"
+    "url": "git+https://github.com/adejaimejr/n8n-nodes-aws-sqs-extended.git"
   },
   "bugs": {
-    "url": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-full/issues"
+    "url": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-extended/issues"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -53,11 +53,10 @@
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "nodes": [
-      "dist/nodes/AwsSqsDelete/AwsSqsDelete.node.js",
-      "dist/nodes/AwsSqsSend/AwsSqsSend.node.js",
-      "dist/nodes/AwsSqsTrigger/AwsSqsTrigger.node.js"
-    ]
+    		"nodes": [
+			"dist/nodes/AwsSqsDelete/AwsSqsDelete.node.js",
+			"dist/nodes/AwsSqsTrigger/AwsSqsTrigger.node.js"
+		]
   },
   "devDependencies": {
     "@types/node": "^18.16.16",

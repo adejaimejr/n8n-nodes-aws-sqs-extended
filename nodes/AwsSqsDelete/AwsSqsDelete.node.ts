@@ -15,8 +15,8 @@ import { SQSClient, DeleteMessageCommand } from '@aws-sdk/client-sqs';
 
 export class AwsSqsDelete implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Delete',
-		name: 'awsSqsFullDelete',
+		displayName: 'AWS SQS Delete Message',
+		name: 'awsSqsExtendedDelete',
 		icon: 'file:awssqs-delete.svg',
 		group: ['transform'],
 		version: 1,
