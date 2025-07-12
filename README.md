@@ -11,16 +11,19 @@
 [![downloads](https://img.shields.io/npm/dm/n8n-nodes-sqs-pro)](https://www.npmjs.com/package/n8n-nodes-sqs-pro)
 [![n8n-community-node](https://img.shields.io/badge/n8n-community%20node-blueviolet)](https://n8n.io/integrations/community-nodes/)
 
-> 🎯 **Professional AWS SQS Delete node for n8n** - Simple, powerful and efficient message deletion from SQS queues
+> 🎯 **Professional AWS SQS nodes for n8n** - Send & Delete messages from SQS queues with ease
 
 ## ✨ Features
 
+- 📤 **Message Sending** - Send messages to SQS queues with automatic queue discovery
 - 🗑️ **Message Deletion** - Delete messages from SQS queues efficiently
-- 🔄 **Batch Processing** - Process multiple messages in a single workflow
+- 🔄 **Dynamic Queue Loading** - Automatically loads your SQS queues from AWS credentials
+- 📊 **Send Input Data** - Option to send workflow input data as message body
 - 🛡️ **Error Handling** - Robust error handling with continue-on-fail support
 - 🔐 **Native AWS Credentials** - Uses n8n's built-in AWS credentials
-- 📊 **Detailed Logging** - Comprehensive logging with request IDs and timestamps
-- 🎯 **FIFO & Standard Queues** - Compatible with all SQS queue types
+- 📈 **FIFO Support** - Full support for FIFO queues with Message Group ID and Deduplication ID
+- 🏷️ **Message Attributes** - Support for custom message attributes
+- ⏱️ **Delay Messages** - Delay message delivery up to 15 minutes
 - ⚡ **High Performance** - Optimized for production workloads
 
 ## 🔧 Installation
@@ -57,23 +60,62 @@ Create AWS credentials in n8n:
    - **Secret Access Key**: Your AWS secret key
    - **Region**: Your AWS region (e.g., `us-east-1`)
 
-### 2. Add the Node to Your Workflow
+### 2. Add the Nodes to Your Workflow
+
+#### AWS SQS Send
 
 1. Create a new workflow
-2. Add the **AWS SQS Delete** node
-3. Configure the parameters:
-   - **Queue URL**: Full SQS queue URL
-   - **Receipt Handle**: Message receipt handle to delete
+2. Add the **AWS SQS Send** node
+3. Select your queue from the dropdown (auto-loaded from your AWS account)
+4. Configure message options
 
-### 3. Execute the Workflow
+#### AWS SQS Delete
 
-The node will delete the specified message from your SQS queue and return a success response.
+1. Add the **AWS SQS Delete** node
+2. Configure the queue URL and receipt handle
 
 ## 📋 Operations
 
-### Delete Message
+### AWS SQS Send
 
-Deletes a single message from an SQS queue.
+Send messages to SQS queues with intelligent queue discovery.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| Queue | dropdown | ✅ | Select from your available SQS queues |
+| Send Input Data | boolean | ✅ | Send workflow input data as message body |
+| Message Body | string | ✅* | Message content (*when Send Input Data is false) |
+| Message Group ID | string | ⭕ | Required for FIFO queues |
+| Message Deduplication ID | string | ❌ | Optional for FIFO queues |
+
+**Additional Options:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| Message Attributes | JSON | Custom message attributes |
+| Delay Seconds | number | Delay delivery (0-900 seconds) |
+
+**Example Configuration:**
+
+```json
+{
+  "queue": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo",
+  "sendInputData": false,
+  "messageBody": "Hello from n8n!",
+  "messageGroupId": "order-processing",
+  "messageDeduplicationId": "order-123456",
+  "additionalOptions": {
+    "messageAttributes": "{\"priority\": \"high\", \"source\": \"n8n\"}",
+    "delaySeconds": 30
+  }
+}
+```
+
+### AWS SQS Delete
+
+Delete messages from SQS queues.
 
 **Parameters:**
 
@@ -82,25 +124,44 @@ Deletes a single message from an SQS queue.
 | Queue URL | string | ✅ | The full URL of the SQS queue |
 | Receipt Handle | string | ✅ | The receipt handle of the message to delete |
 
-**Example Configuration:**
-
-```json
-{
-  "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo",
-  "receiptHandle": "AQEBwJnKyrHigUMZj6rYigCgxlaS3SLy0a..."
-}
-```
-
 ## 💡 Use Cases
 
-### 1. Process and Delete Messages
+### 1. Send Order Notifications
 
 ```json
 {
   "nodes": [
     {
-      "name": "SQS Trigger",
-      "type": "n8n-nodes-aws-sqs-trigger",
+      "name": "Order Created",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "order-created"
+      }
+    },
+    {
+      "name": "Send to Queue",
+      "type": "n8n-nodes-sqs-pro-send",
+      "parameters": {
+        "queue": "https://sqs.us-east-1.amazonaws.com/123456789012/orders.fifo",
+        "sendInputData": true,
+        "messageGroupId": "orders",
+        "additionalOptions": {
+          "messageAttributes": "{\"orderType\": \"new\", \"priority\": \"high\"}"
+        }
+      }
+    }
+  ]
+}
+```
+
+### 2. Process and Delete Messages
+
+```json
+{
+  "nodes": [
+    {
+      "name": "Receive Message",
+      "type": "n8n-nodes-base.awsSqs",
       "parameters": {
         "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue"
       }
@@ -113,46 +174,28 @@ Deletes a single message from an SQS queue.
       }
     },
     {
-      "name": "Delete Message", 
-      "type": "n8n-nodes-sqs-pro",
+      "name": "Delete Message",
+      "type": "n8n-nodes-sqs-pro-delete",
       "parameters": {
-        "queueUrl": "{{$node['SQS Trigger'].json.queueUrl}}",
-        "receiptHandle": "{{$node['SQS Trigger'].json.receiptHandle}}"
+        "queueUrl": "{{$node['Receive Message'].json.queueUrl}}",
+        "receiptHandle": "{{$node['Receive Message'].json.receiptHandle}}"
       }
     }
   ]
 }
 ```
 
-### 2. Batch Message Processing
-
-Process multiple messages from different queues in a single workflow:
+### 3. Delayed Message Processing
 
 ```json
 {
-  "items": [
-    {
-      "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/queue1",
-      "receiptHandle": "AQEBwJnKyrHigUMZj6rYigCgxlaS3SLy0a..."
-    },
-    {
-      "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/queue2", 
-      "receiptHandle": "AQEBxMpLyrHigUMZj6rYigCgxlaS3SLy0b..."
-    }
-  ]
-}
-```
-
-### 3. Error Handling
-
-Configure the node to continue on failure:
-
-```json
-{
-  "continueOnFail": true,
   "parameters": {
-    "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
-    "receiptHandle": "invalid-handle"
+    "queue": "https://sqs.us-east-1.amazonaws.com/123456789012/delayed-tasks",
+    "sendInputData": false,
+    "messageBody": "Process this in 5 minutes",
+    "additionalOptions": {
+      "delaySeconds": 300
+    }
   }
 }
 ```
@@ -168,7 +211,10 @@ Your AWS user needs the following permissions:
     {
       "Effect": "Allow",
       "Action": [
-        "sqs:DeleteMessage"
+        "sqs:SendMessage",
+        "sqs:DeleteMessage",
+        "sqs:ListQueues",
+        "sqs:GetQueueAttributes"
       ],
       "Resource": "arn:aws:sqs:*:*:*"
     }
@@ -178,7 +224,21 @@ Your AWS user needs the following permissions:
 
 ## 📊 Output
 
-The node returns the following data for each processed message:
+### AWS SQS Send Output
+
+```json
+{
+  "success": true,
+  "operation": "sendMessage",
+  "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+  "messageId": "12345678-1234-1234-1234-123456789012",
+  "requestId": "87654321-4321-4321-4321-210987654321",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "messageBody": "Input data sent"
+}
+```
+
+### AWS SQS Delete Output
 
 ```json
 {
@@ -187,17 +247,6 @@ The node returns the following data for each processed message:
   "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
   "receiptHandle": "AQEBwJnKyrHigUMZj6rYigCgxlaS3SLy0a...",
   "requestId": "12345678-1234-1234-1234-123456789012",
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
-
-In case of error (with continue-on-fail enabled):
-
-```json
-{
-  "success": false,
-  "error": "The receipt handle provided is not valid",
-  "operation": "deleteMessage",
   "timestamp": "2024-01-15T10:30:00.000Z"
 }
 ```
@@ -225,8 +274,11 @@ npm test
 ```
 n8n-nodes-sqs-pro/
 ├── nodes/
-│   └── AwsSqsDelete/
-│       ├── AwsSqsDelete.node.ts    # Main node implementation
+│   ├── AwsSqsDelete/
+│   │   ├── AwsSqsDelete.node.ts    # Delete node implementation
+│   │   └── awssqs.svg              # Node icon
+│   └── AwsSqsSend/
+│       ├── AwsSqsSend.node.ts      # Send node implementation
 │       └── awssqs.svg              # Node icon
 ├── dist/                           # Built files
 ├── package.json                    # Package configuration
@@ -244,16 +296,22 @@ n8n-nodes-sqs-pro/
 ## ❓ FAQ
 
 ### Q: Can I use this with FIFO queues?
-**A:** Yes! This node works with both Standard and FIFO SQS queues.
+**A:** Yes! Both nodes work with Standard and FIFO SQS queues. For FIFO queues, make sure to provide Message Group ID.
 
-### Q: What happens if the message is already deleted?
-**A:** The node will return an error, but you can enable "Continue on Fail" to handle this gracefully.
+### Q: How does the automatic queue loading work?
+**A:** The Send node automatically loads all queues from your AWS account using the configured credentials. Simply select from the dropdown.
 
-### Q: Can I delete multiple messages at once?
-**A:** Yes, you can process multiple items in a single workflow execution. Each item should have its own `queueUrl` and `receiptHandle`.
+### Q: Can I send workflow input data directly?
+**A:** Yes! Enable "Send Input Data" and the node will automatically send your workflow input data as JSON message body.
 
-### Q: Do I need to configure AWS credentials?
-**A:** Yes, you need to configure AWS credentials in n8n's credential manager. The node uses n8n's native AWS credentials.
+### Q: What happens if a message send fails?
+**A:** The node will return an error, but you can enable "Continue on Fail" to handle this gracefully and continue processing other items.
+
+### Q: Can I add custom message attributes?
+**A:** Yes! Use the "Message Attributes" option in "Additional Options" to add custom attributes as JSON.
+
+### Q: Is there a limit to delay seconds?
+**A:** Yes, AWS SQS supports delays from 0 to 900 seconds (15 minutes).
 
 ## 🤝 Contributing
 

@@ -3,10 +3,13 @@ import {
 	ICredentialTestFunctions,
 	IDataObject,
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
 	INodeCredentialTestResult,
 	INodeExecutionData,
+	INodeListSearchResult,
 	INodeType,
 	INodeTypeDescription,
+	INodePropertyOptions,
 	NodeConnectionType,
 	NodeOperationError,
 } from 'n8n-workflow';
@@ -20,7 +23,7 @@ export class AwsSqsSend implements INodeType {
 		icon: 'file:awssqs.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Send messages to AWS SQS queues',
+		description: 'Send a Message to AWS SQS',
 		subtitle: 'Send To Queue AWS SQS',
 		defaults: {
 			name: 'AWS SQS Send',
@@ -35,36 +38,23 @@ export class AwsSqsSend implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				options: [
-					{
-						name: 'Send Message',
-						value: 'sendMessage',
-						description: 'Send a single message to SQS queue',
-						action: 'Send a message to SQS queue',
-					},
-					{
-						name: 'Send Message Batch',
-						value: 'sendMessageBatch',
-						description: 'Send multiple messages to SQS queue in batch',
-						action: 'Send multiple messages to SQS queue in batch',
-					},
-				],
-				default: 'sendMessage',
-			},
-			{
-				displayName: 'Queue URL',
+				displayName: 'Queue',
 				name: 'queueUrl',
-				type: 'string',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getQueues',
+				},
 				required: true,
 				default: '',
-				placeholder: 'https://sqs.us-east-2.amazonaws.com/123456789012/your-queue-name.fifo',
-				description: 'The URL of the SQS queue',
+				description: 'Select the SQS queue to send message to',
 			},
-			// Send Message Parameters
+			{
+				displayName: 'Send Input Data',
+				name: 'sendInputData',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to send the input data as message body',
+			},
 			{
 				displayName: 'Message Body',
 				name: 'messageBody',
@@ -74,31 +64,7 @@ export class AwsSqsSend implements INodeType {
 				description: 'The content of the message to send',
 				displayOptions: {
 					show: {
-						operation: ['sendMessage'],
-					},
-				},
-			},
-			{
-				displayName: 'Message Attributes',
-				name: 'messageAttributes',
-				type: 'json',
-				default: '{}',
-				description: 'Message attributes as JSON object',
-				displayOptions: {
-					show: {
-						operation: ['sendMessage'],
-					},
-				},
-			},
-			{
-				displayName: 'Delay Seconds',
-				name: 'delaySeconds',
-				type: 'number',
-				default: 0,
-				description: 'Number of seconds to delay message delivery (0-900)',
-				displayOptions: {
-					show: {
-						operation: ['sendMessage'],
+						sendInputData: [false],
 					},
 				},
 			},
@@ -107,40 +73,91 @@ export class AwsSqsSend implements INodeType {
 				name: 'messageGroupId',
 				type: 'string',
 				default: '',
-				description: 'Message group ID for FIFO queues',
-				displayOptions: {
-					show: {
-						operation: ['sendMessage'],
-					},
-				},
+				description: 'Message group ID for FIFO queues (required for FIFO queues)',
+				placeholder: 'my-group-id',
 			},
 			{
 				displayName: 'Message Deduplication ID',
 				name: 'messageDeduplicationId',
 				type: 'string',
 				default: '',
-				description: 'Message deduplication ID for FIFO queues',
-				displayOptions: {
-					show: {
-						operation: ['sendMessage'],
-					},
-				},
+				description: 'Message deduplication ID for FIFO queues (optional if content-based deduplication is enabled)',
+				placeholder: 'unique-message-id',
 			},
-			// Send Message Batch Parameters
 			{
-				displayName: 'Messages',
-				name: 'messages',
-				type: 'json',
-				required: true,
-				default: '[]',
-				description: 'Array of messages to send in batch format',
-				displayOptions: {
-					show: {
-						operation: ['sendMessageBatch'],
+				displayName: 'Additional Options',
+				name: 'additionalOptions',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				options: [
+					{
+						displayName: 'Message Attributes',
+						name: 'messageAttributes',
+						type: 'json',
+						default: '{}',
+						description: 'Message attributes as JSON object',
+						placeholder: '{"attribute1": "value1", "attribute2": "value2"}',
 					},
-				},
+					{
+						displayName: 'Delay Seconds',
+						name: 'delaySeconds',
+						type: 'number',
+						default: 0,
+						description: 'Number of seconds to delay message delivery (0-900)',
+						typeOptions: {
+							minValue: 0,
+							maxValue: 900,
+						},
+					},
+				],
 			},
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			async getQueues(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const credentials = await this.getCredentials('aws');
+				
+				const config = {
+					accessKeyId: credentials.accessKeyId as string,
+					secretAccessKey: credentials.secretAccessKey as string,
+					region: credentials.region as string,
+				};
+
+				const sqs = new AWS.SQS(config);
+
+				try {
+					const result = await sqs.listQueues().promise();
+					
+					if (!result.QueueUrls || result.QueueUrls.length === 0) {
+						return [
+							{
+								name: 'No queues found',
+								value: '',
+							},
+						];
+					}
+
+					return result.QueueUrls.map((queueUrl) => {
+						const queueName = queueUrl.split('/').pop() || queueUrl;
+						return {
+							name: queueName,
+							value: queueUrl,
+						};
+					});
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+					return [
+						{
+							name: `Error loading queues: ${errorMessage}`,
+							value: '',
+						},
+					];
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -159,22 +176,40 @@ export class AwsSqsSend implements INodeType {
 
 		for (let i = 0; i < items.length; i++) {
 			try {
-				const operation = this.getNodeParameter('operation', i) as string;
 				const queueUrl = this.getNodeParameter('queueUrl', i) as string;
+				const sendInputData = this.getNodeParameter('sendInputData', i) as boolean;
+				const messageGroupId = this.getNodeParameter('messageGroupId', i) as string;
+				const messageDeduplicationId = this.getNodeParameter('messageDeduplicationId', i) as string;
+				const additionalOptions = this.getNodeParameter('additionalOptions', i) as IDataObject;
 
-				if (operation === 'sendMessage') {
-					const messageBody = this.getNodeParameter('messageBody', i) as string;
-					const messageAttributes = this.getNodeParameter('messageAttributes', i) as string;
-					const delaySeconds = this.getNodeParameter('delaySeconds', i) as number;
-					const messageGroupId = this.getNodeParameter('messageGroupId', i) as string;
-					const messageDeduplicationId = this.getNodeParameter('messageDeduplicationId', i) as string;
+				let messageBody: string;
 
-					const params: AWS.SQS.SendMessageRequest = {
-						QueueUrl: queueUrl,
-						MessageBody: messageBody,
-					};
+				if (sendInputData) {
+					// Use input data as message body
+					messageBody = JSON.stringify(items[i].json);
+				} else {
+					// Use manual message body
+					messageBody = this.getNodeParameter('messageBody', i) as string;
+				}
 
-					// Add optional parameters if provided
+				const params: AWS.SQS.SendMessageRequest = {
+					QueueUrl: queueUrl,
+					MessageBody: messageBody,
+				};
+
+				// Add Message Group ID if provided
+				if (messageGroupId) {
+					params.MessageGroupId = messageGroupId;
+				}
+
+				// Add Message Deduplication ID if provided
+				if (messageDeduplicationId) {
+					params.MessageDeduplicationId = messageDeduplicationId;
+				}
+
+				// Add optional parameters from Additional Options
+				if (additionalOptions.messageAttributes) {
+					const messageAttributes = additionalOptions.messageAttributes as string;
 					if (messageAttributes && messageAttributes !== '{}') {
 						try {
 							const attributes = JSON.parse(messageAttributes);
@@ -208,127 +243,28 @@ export class AwsSqsSend implements INodeType {
 							);
 						}
 					}
+				}
 
+				if (additionalOptions.delaySeconds) {
+					const delaySeconds = additionalOptions.delaySeconds as number;
 					if (delaySeconds > 0) {
 						params.DelaySeconds = delaySeconds;
 					}
-
-					if (messageGroupId) {
-						params.MessageGroupId = messageGroupId;
-					}
-
-					if (messageDeduplicationId) {
-						params.MessageDeduplicationId = messageDeduplicationId;
-					}
-
-					const result = await sqs.sendMessage(params).promise();
-
-					returnData.push({
-						json: {
-							success: true,
-							operation: 'sendMessage',
-							queueUrl,
-							messageId: result.MessageId,
-							requestId: result.$response?.requestId,
-							timestamp: new Date().toISOString(),
-						},
-					});
-
-				} else if (operation === 'sendMessageBatch') {
-					const messagesParam = this.getNodeParameter('messages', i) as string;
-					let messages: any[];
-
-					try {
-						messages = JSON.parse(messagesParam);
-					} catch (error) {
-						throw new NodeOperationError(
-							this.getNode(),
-							`Invalid Messages JSON: ${error instanceof Error ? error.message : 'Unknown error'}`,
-							{ itemIndex: i },
-						);
-					}
-
-					if (!Array.isArray(messages) || messages.length === 0) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Messages must be a non-empty array',
-							{ itemIndex: i },
-						);
-					}
-
-					if (messages.length > 10) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Maximum of 10 messages allowed per batch',
-							{ itemIndex: i },
-						);
-					}
-
-					const entries: AWS.SQS.SendMessageBatchRequestEntry[] = messages.map((message, index) => {
-						const entry: AWS.SQS.SendMessageBatchRequestEntry = {
-							Id: message.id || `msg_${index}`,
-							MessageBody: message.messageBody || message.body,
-						};
-
-						if (message.messageAttributes) {
-							const convertedAttributes: { [key: string]: AWS.SQS.MessageAttributeValue } = {};
-							
-							for (const [key, value] of Object.entries(message.messageAttributes)) {
-								if (typeof value === 'string') {
-									convertedAttributes[key] = {
-										DataType: 'String',
-										StringValue: value,
-									};
-								} else if (typeof value === 'number') {
-									convertedAttributes[key] = {
-										DataType: 'Number',
-										StringValue: value.toString(),
-									};
-								} else if (typeof value === 'object' && value !== null) {
-									const attr = value as any;
-									convertedAttributes[key] = {
-										DataType: attr.DataType || 'String',
-										StringValue: attr.StringValue || attr.value,
-									};
-								}
-							}
-							entry.MessageAttributes = convertedAttributes;
-						}
-
-						if (message.delaySeconds) {
-							entry.DelaySeconds = message.delaySeconds;
-						}
-
-						if (message.messageGroupId) {
-							entry.MessageGroupId = message.messageGroupId;
-						}
-
-						if (message.messageDeduplicationId) {
-							entry.MessageDeduplicationId = message.messageDeduplicationId;
-						}
-
-						return entry;
-					});
-
-					const params: AWS.SQS.SendMessageBatchRequest = {
-						QueueUrl: queueUrl,
-						Entries: entries,
-					};
-
-					const result = await sqs.sendMessageBatch(params).promise();
-
-					returnData.push({
-						json: {
-							success: true,
-							operation: 'sendMessageBatch',
-							queueUrl,
-							successful: result.Successful,
-							failed: result.Failed,
-							requestId: result.$response.requestId,
-							timestamp: new Date().toISOString(),
-						},
-					});
 				}
+
+				const result = await sqs.sendMessage(params).promise();
+
+				returnData.push({
+					json: {
+						success: true,
+						operation: 'sendMessage',
+						queueUrl,
+						messageId: result.MessageId,
+						requestId: result.$response?.requestId,
+						timestamp: new Date().toISOString(),
+						messageBody: sendInputData ? 'Input data sent' : messageBody,
+					},
+				});
 
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -337,7 +273,7 @@ export class AwsSqsSend implements INodeType {
 						json: {
 							success: false,
 							error: errorMessage,
-							operation: this.getNodeParameter('operation', i) as string,
+							operation: 'sendMessage',
 							timestamp: new Date().toISOString(),
 						},
 					});
