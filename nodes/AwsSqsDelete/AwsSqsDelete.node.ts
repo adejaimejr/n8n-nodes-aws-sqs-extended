@@ -15,9 +15,9 @@ import * as AWS from 'aws-sdk';
 
 export class AwsSqsDelete implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Delete',
+		displayName: 'AWS SQS Delete Full',
 		name: 'awsSqsFullDelete',
-		icon: 'file:awssqs.svg',
+		icon: 'file:awssqs-delete.svg',
 		group: ['transform'],
 		version: 1,
 		description: 'Delete messages from AWS SQS queues',

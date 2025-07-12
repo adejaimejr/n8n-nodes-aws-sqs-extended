@@ -11,9 +11,9 @@ import * as AWS from 'aws-sdk';
 
 export class AwsSqsTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Trigger',
+		displayName: 'AWS SQS Trigger Full',
 		name: 'awsSqsFullTrigger',
-		icon: 'file:awssqs.svg',
+		icon: 'file:awssqs-trigger.svg',
 		group: ['trigger'],
 		version: 1,
 		description: 'Trigger workflow when messages are received from AWS SQS',

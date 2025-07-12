@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-aws-sqs-full",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "🚀 Complete AWS SQS package for n8n - Send, Delete & Trigger messages from SQS queues with ease. Full package with 3 professional nodes.",
   "keywords": [
     "n8n-community-node-package",
