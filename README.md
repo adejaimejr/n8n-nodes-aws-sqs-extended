@@ -65,10 +65,13 @@ npm install n8n-nodes-aws-sqs-extended
 
 ```json
 {
-  "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
-  "pollingInterval": 30,
-  "maxMessages": 10,
-  "deleteAfterProcessing": true
+  "queue": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+  "interval": 30,
+  "unit": "seconds",
+  "deleteMessages": false,
+  "visibilityTimeout": 30,
+  "maxMessages": 1,
+  "waitTimeSeconds": 20
 }
 ```
 
@@ -87,10 +90,12 @@ Delete messages from SQS queues after processing.
 Monitor SQS queues and trigger workflows when messages arrive.
 
 **Key Parameters:**
-- Queue URL for monitoring
-- Polling interval (configurable)
-- Maximum messages per poll
-- Auto-delete after processing option
+- **Queue Selection**: Auto-loads available queues from your AWS account
+- **Polling Interval**: Configurable interval (seconds/minutes)
+- **Delete Messages**: Disabled by default (safe monitoring)
+- **Visibility Timeout**: 30 seconds (message lock duration)
+- **Max Messages**: 1 message per poll (adjustable 1-10)
+- **Wait Time Seconds**: 20 seconds long polling (reduces API calls)
 
 ## Use Cases
 
@@ -142,6 +147,24 @@ Your AWS user needs the following permissions:
 ```
 
 ## Configuration
+
+### Understanding Wait Time Seconds
+
+**Wait Time Seconds** é um parâmetro do AWS SQS que controla o **long polling**:
+
+- **0 segundos**: **Short polling** - Retorna imediatamente (pode retornar vazio mesmo tendo mensagens)
+- **1-20 segundos**: **Long polling** - Aguarda até X segundos por mensagens antes de retornar
+- **Recomendado**: **20 segundos** - Máxima eficiência e redução de custos
+
+**Benefícios do Long Polling:**
+- ✅ Reduz número de chamadas API (menor custo)
+- ✅ Reduz latência na detecção de mensagens
+- ✅ Evita "empty receives" desnecessários
+- ✅ Melhor eficiência de recursos
+
+**Quando usar Short Polling (0s):**
+- ❌ Apenas se precisar de resposta imediata
+- ❌ Resulta em mais chamadas API e maior custo
 
 ### Error Handling
 

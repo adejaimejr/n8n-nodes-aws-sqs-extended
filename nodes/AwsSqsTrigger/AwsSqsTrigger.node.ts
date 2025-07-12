@@ -74,53 +74,44 @@ export class AwsSqsTrigger implements INodeType {
 				description: 'Unit of the interval value',
 			},
 			{
-				displayName: 'Options',
-				name: 'options',
-				type: 'collection',
-				placeholder: 'Add Option',
-				default: {},
-				options: [
-					{
-						displayName: 'Delete Messages',
-						name: 'deleteMessages',
-						type: 'boolean',
-						default: true,
-						description: 'Whether to delete messages after receiving them',
-					},
-					{
-						displayName: 'Visibility Timeout',
-						name: 'visibilityTimeout',
-						type: 'number',
-						default: 30,
-						description: 'The duration (in seconds) that the received messages are hidden from subsequent retrieve requests',
-						typeOptions: {
-							minValue: 0,
-							maxValue: 43200, // 12 hours max
-						},
-					},
-					{
-						displayName: 'Max Messages',
-						name: 'maxMessages',
-						type: 'number',
-						default: 1,
-						description: 'Maximum number of messages to retrieve per poll (1-10)',
-						typeOptions: {
-							minValue: 1,
-							maxValue: 10,
-						},
-					},
-					{
-						displayName: 'Wait Time Seconds',
-						name: 'waitTimeSeconds',
-						type: 'number',
-						default: 20,
-						description: 'The duration (in seconds) for which the call waits for a message to arrive (long polling)',
-						typeOptions: {
-							minValue: 0,
-							maxValue: 20,
-						},
-					},
-				],
+				displayName: 'Delete Messages',
+				name: 'deleteMessages',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to delete messages after receiving them. Enable only if you want to consume messages.',
+			},
+			{
+				displayName: 'Visibility Timeout',
+				name: 'visibilityTimeout',
+				type: 'number',
+				default: 30,
+				description: 'Duration (in seconds) that received messages are hidden from subsequent retrieve requests',
+				typeOptions: {
+					minValue: 0,
+					maxValue: 43200, // 12 hours max
+				},
+			},
+			{
+				displayName: 'Max Messages',
+				name: 'maxMessages',
+				type: 'number',
+				default: 1,
+				description: 'Maximum number of messages to retrieve per poll (1-10)',
+				typeOptions: {
+					minValue: 1,
+					maxValue: 10,
+				},
+			},
+			{
+				displayName: 'Wait Time Seconds',
+				name: 'waitTimeSeconds',
+				type: 'number',
+				default: 20,
+				description: 'Long polling duration (0-20 seconds). Higher values reduce API calls but increase latency. 0 = short polling (immediate return), 20 = maximum efficiency.',
+				typeOptions: {
+					minValue: 0,
+					maxValue: 20,
+				},
 			},
 		],
 	};
@@ -165,13 +156,10 @@ export class AwsSqsTrigger implements INodeType {
 		const queueUrl = this.getNodeParameter('queue') as string;
 		const interval = this.getNodeParameter('interval') as number;
 		const unit = this.getNodeParameter('unit') as string;
-		const options = this.getNodeParameter('options') as IDataObject;
-
-		// Parse options with defaults
-		const deleteMessages = options.deleteMessages !== undefined ? options.deleteMessages as boolean : true;
-		const visibilityTimeout = options.visibilityTimeout as number || 30;
-		const maxMessages = options.maxMessages as number || 1;
-		const waitTimeSeconds = options.waitTimeSeconds as number || 20;
+		const deleteMessages = this.getNodeParameter('deleteMessages', false) as boolean;
+		const visibilityTimeout = this.getNodeParameter('visibilityTimeout', 30) as number;
+		const maxMessages = this.getNodeParameter('maxMessages', 1) as number;
+		const waitTimeSeconds = this.getNodeParameter('waitTimeSeconds', 20) as number;
 
 		// Convert interval to milliseconds
 		const intervalMs = unit === 'minutes' ? interval * 60 * 1000 : interval * 1000;

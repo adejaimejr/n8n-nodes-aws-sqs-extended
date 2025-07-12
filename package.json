@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-aws-sqs-extended",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "🔧 Extended AWS SQS operations for n8n - Delete Messages, Queue Monitoring & Batch Operations. Complements the native AWS SQS node.",
   "keywords": [
     "n8n-community-node-package",
