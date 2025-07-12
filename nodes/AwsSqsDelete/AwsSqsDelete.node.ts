@@ -11,7 +11,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 
-import * as AWS from 'aws-sdk';
+import { SQSClient, DeleteMessageCommand } from '@aws-sdk/client-sqs';
 
 export class AwsSqsDelete implements INodeType {
 	description: INodeTypeDescription = {
@@ -66,7 +66,7 @@ export class AwsSqsDelete implements INodeType {
 			region: credentials.region as string,
 		};
 
-		const sqs = new AWS.SQS(config);
+		const sqs = new SQSClient(config);
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -78,7 +78,7 @@ export class AwsSqsDelete implements INodeType {
 					ReceiptHandle: receiptHandle,
 				};
 
-				const result = await sqs.deleteMessage(params).promise();
+				const result = await sqs.send(new DeleteMessageCommand(params));
 
 				returnData.push({
 					json: {
@@ -86,7 +86,7 @@ export class AwsSqsDelete implements INodeType {
 						operation: 'deleteMessage',
 						queueUrl,
 						receiptHandle,
-						requestId: result.$response.requestId,
+						requestId: result.$metadata.requestId,
 						timestamp: new Date().toISOString(),
 					},
 				});

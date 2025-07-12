@@ -14,7 +14,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 
-import * as AWS from 'aws-sdk';
+import { SQSClient, SendMessageCommand, ListQueuesCommand } from '@aws-sdk/client-sqs';
 
 export class AwsSqsSend implements INodeType {
 	description: INodeTypeDescription = {
@@ -173,10 +173,10 @@ export class AwsSqsSend implements INodeType {
 					region: credentials.region as string,
 				};
 
-				const sqs = new AWS.SQS(config);
+				const sqs = new SQSClient(config);
 
 				try {
-					const result = await sqs.listQueues().promise();
+					const result = await sqs.send(new ListQueuesCommand({}));
 					
 					if (!result.QueueUrls || result.QueueUrls.length === 0) {
 						return [
@@ -187,7 +187,7 @@ export class AwsSqsSend implements INodeType {
 						];
 					}
 
-					return result.QueueUrls.map((queueUrl) => {
+					return result.QueueUrls.map((queueUrl: string) => {
 						const queueName = queueUrl.split('/').pop() || queueUrl;
 						return {
 							name: queueName,
@@ -219,7 +219,7 @@ export class AwsSqsSend implements INodeType {
 			region: credentials.region as string,
 		};
 
-		const sqs = new AWS.SQS(config);
+		const sqs = new SQSClient(config);
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -239,7 +239,7 @@ export class AwsSqsSend implements INodeType {
 					messageBody = this.getNodeParameter('messageBody', i) as string;
 				}
 
-				const params: AWS.SQS.SendMessageRequest = {
+				const params: any = {
 					QueueUrl: queueUrl,
 					MessageBody: messageBody,
 				};
@@ -259,7 +259,7 @@ export class AwsSqsSend implements INodeType {
 					const messageAttributesCollection = additionalOptions.messageAttributes as IDataObject;
 					const messageAttributes = messageAttributesCollection.attribute as IDataObject[];
 					if (messageAttributes && messageAttributes.length > 0) {
-						const convertedAttributes: { [key: string]: AWS.SQS.MessageAttributeValue } = {};
+						const convertedAttributes: { [key: string]: any } = {};
 						
 						for (const attr of messageAttributes) {
 							const name = attr.name as string;
@@ -291,7 +291,7 @@ export class AwsSqsSend implements INodeType {
 					}
 				}
 
-				const result = await sqs.sendMessage(params).promise();
+				const result = await sqs.send(new SendMessageCommand(params));
 
 				const outputData: any = {
 					MessageId: result.MessageId,

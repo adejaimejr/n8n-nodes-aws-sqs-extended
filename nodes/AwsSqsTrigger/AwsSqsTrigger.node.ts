@@ -11,7 +11,7 @@ import {
 	INodePropertyOptions,
 } from 'n8n-workflow';
 
-import * as AWS from 'aws-sdk';
+import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand, ListQueuesCommand } from '@aws-sdk/client-sqs';
 
 export class AwsSqsTrigger implements INodeType {
 	description: INodeTypeDescription = {
@@ -136,10 +136,10 @@ export class AwsSqsTrigger implements INodeType {
 					region: credentials.region as string,
 				};
 
-				const sqs = new AWS.SQS(config);
+				const sqs = new SQSClient(config);
 
 				try {
-					const queues = await sqs.listQueues().promise();
+					const queues = await sqs.send(new ListQueuesCommand({}));
 					const returnData: INodePropertyOptions[] = [];
 
 					if (queues.QueueUrls) {
@@ -184,11 +184,11 @@ export class AwsSqsTrigger implements INodeType {
 			region: credentials.region as string,
 		};
 
-		const sqs = new AWS.SQS(config);
+		const sqs = new SQSClient(config);
 
 		const pollForMessages = async () => {
 			try {
-				const params: AWS.SQS.ReceiveMessageRequest = {
+				const params = {
 					QueueUrl: queueUrl,
 					MaxNumberOfMessages: maxMessages,
 					WaitTimeSeconds: waitTimeSeconds,
@@ -196,7 +196,7 @@ export class AwsSqsTrigger implements INodeType {
 					MessageAttributeNames: ['All'],
 				};
 
-				const result = await sqs.receiveMessage(params).promise();
+				const result = await sqs.send(new ReceiveMessageCommand(params));
 
 				if (result.Messages && result.Messages.length > 0) {
 					for (const message of result.Messages) {
@@ -216,10 +216,10 @@ export class AwsSqsTrigger implements INodeType {
 						// Delete message if configured
 						if (deleteMessages && message.ReceiptHandle) {
 							try {
-								await sqs.deleteMessage({
+								await sqs.send(new DeleteMessageCommand({
 									QueueUrl: queueUrl,
 									ReceiptHandle: message.ReceiptHandle,
-								}).promise();
+								}));
 							} catch (deleteError) {
 								const errorMessage = deleteError instanceof Error ? deleteError.message : 'Unknown error';
 								console.error('Failed to delete message:', errorMessage);
