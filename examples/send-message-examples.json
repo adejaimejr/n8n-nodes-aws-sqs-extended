@@ -159,7 +159,7 @@
         },
         {
           "name": "Send to Queue",
-          "type": "n8n-nodes-aws-sqs-full",
+          "type": "n8n-nodes-aws-sqs-full.awsSqsFullSend",
           "parameters": {
             "operation": "sendMessage",
             "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/order-processing",
@@ -196,7 +196,7 @@
         },
         {
           "name": "Send Batch",
-          "type": "n8n-nodes-aws-sqs-full",
+          "type": "n8n-nodes-aws-sqs-full.awsSqsFullSend",
           "parameters": {
             "operation": "sendMessageBatch",
             "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/notifications",

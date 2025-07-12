@@ -12,7 +12,7 @@ import * as AWS from 'aws-sdk';
 export class AwsSqsTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'AWS SQS Trigger',
-		name: 'awsSqsTrigger',
+		name: 'awsSqsFullTrigger',
 		icon: 'file:awssqs.svg',
 		group: ['trigger'],
 		version: 1,

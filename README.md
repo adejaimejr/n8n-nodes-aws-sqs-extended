@@ -130,7 +130,7 @@ Monitor SQS queues and trigger workflows when messages arrive.
     },
     {
       "name": "Send to Queue",
-      "type": "n8n-nodes-aws-sqs-full-send",
+      "type": "n8n-nodes-aws-sqs-full.awsSqsFullSend",
       "parameters": {
         "queue": "https://sqs.us-east-1.amazonaws.com/123456789012/orders.fifo",
         "sendInputData": true,
@@ -156,7 +156,7 @@ Monitor SQS queues and trigger workflows when messages arrive.
     },
     {
       "name": "Delete Message",
-      "type": "n8n-nodes-aws-sqs-full-delete",
+      "type": "n8n-nodes-aws-sqs-full.awsSqsFullDelete",
       "parameters": {
         "queueUrl": "{{$node['Receive Message'].json.queueUrl}}",
         "receiptHandle": "{{$node['Receive Message'].json.receiptHandle}}"
