@@ -1,6 +1,6 @@
 # Ignore legacy AWS SQS Delete Service
 AWS SQS Delete Service/
-development-plan/
+#development-plan/
 
 # Node modules
 node_modules/
