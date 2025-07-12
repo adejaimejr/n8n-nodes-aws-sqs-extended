@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-sqs-pro",
-  "version": "0.0.8",
-  "description": "🚀 Professional AWS SQS node for n8n - Send & Delete messages from SQS queues with ease",
+  "version": "0.0.9",
+  "description": "🚀 Professional AWS SQS nodes for n8n - Send, Delete & Trigger messages from SQS queues with ease",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -12,6 +12,7 @@
     "message",
     "send",
     "delete",
+    "trigger",
     "cloud",
     "serverless"
   ],
@@ -51,7 +52,8 @@
 		"n8nNodesApiVersion": 1,
 		"nodes": [
 			"dist/nodes/AwsSqsDelete/AwsSqsDelete.node.js",
-			"dist/nodes/AwsSqsSend/AwsSqsSend.node.js"
+			"dist/nodes/AwsSqsSend/AwsSqsSend.node.js",
+			"dist/nodes/AwsSqsTrigger/AwsSqsTrigger.node.js"
 		]
 	},
   "devDependencies": {
