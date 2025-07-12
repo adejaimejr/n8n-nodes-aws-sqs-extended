@@ -80,7 +80,7 @@ export class AwsSqsSend implements INodeType {
 				displayName: 'Message Deduplication ID',
 				name: 'messageDeduplicationId',
 				type: 'string',
-				default: '',
+				default: '{{ Date.now().toString() }}',
 				description: 'Message deduplication ID for FIFO queues (optional if content-based deduplication is enabled)',
 				placeholder: 'unique-message-id',
 			},
@@ -94,10 +94,57 @@ export class AwsSqsSend implements INodeType {
 					{
 						displayName: 'Message Attributes',
 						name: 'messageAttributes',
-						type: 'json',
-						default: '{}',
-						description: 'Message attributes as JSON object',
-						placeholder: '{"attribute1": "value1", "attribute2": "value2"}',
+						type: 'fixedCollection',
+						description: 'Message attributes to send with the message',
+						default: {},
+						typeOptions: {
+							multipleValues: true,
+						},
+						options: [
+							{
+								name: 'attribute',
+								displayName: 'Attribute',
+								values: [
+									{
+										displayName: 'Name',
+										name: 'name',
+										type: 'string',
+										default: '',
+										description: 'Name of the attribute',
+										placeholder: 'attribute-name',
+									},
+									{
+										displayName: 'Data Type',
+										name: 'dataType',
+										type: 'options',
+										options: [
+											{
+												name: 'String',
+												value: 'String',
+											},
+											{
+												name: 'Number',
+												value: 'Number',
+											},
+											{
+												name: 'Binary',
+												value: 'Binary',
+											},
+										],
+										default: 'String',
+										description: 'Data type of the attribute',
+									},
+									{
+										displayName: 'Value',
+										name: 'value',
+										type: 'string',
+										default: '',
+										description: 'Value of the attribute',
+										placeholder: 'attribute-value',
+									},
+								],
+							},
+						],
 					},
 					{
 						displayName: 'Delay Seconds',
@@ -209,39 +256,31 @@ export class AwsSqsSend implements INodeType {
 
 				// Add optional parameters from Additional Options
 				if (additionalOptions.messageAttributes) {
-					const messageAttributes = additionalOptions.messageAttributes as string;
-					if (messageAttributes && messageAttributes !== '{}') {
-						try {
-							const attributes = JSON.parse(messageAttributes);
-							const convertedAttributes: { [key: string]: AWS.SQS.MessageAttributeValue } = {};
-							
-							for (const [key, value] of Object.entries(attributes)) {
-								if (typeof value === 'string') {
-									convertedAttributes[key] = {
-										DataType: 'String',
+					const messageAttributesCollection = additionalOptions.messageAttributes as IDataObject;
+					const messageAttributes = messageAttributesCollection.attribute as IDataObject[];
+					if (messageAttributes && messageAttributes.length > 0) {
+						const convertedAttributes: { [key: string]: AWS.SQS.MessageAttributeValue } = {};
+						
+						for (const attr of messageAttributes) {
+							const name = attr.name as string;
+							const dataType = attr.dataType as string;
+							const value = attr.value as string;
+
+							if (name && value) {
+								if (dataType === 'Binary') {
+									convertedAttributes[name] = {
+										DataType: dataType,
+										BinaryValue: Buffer.from(value, 'utf8'),
+									};
+								} else {
+									convertedAttributes[name] = {
+										DataType: dataType,
 										StringValue: value,
-									};
-								} else if (typeof value === 'number') {
-									convertedAttributes[key] = {
-										DataType: 'Number',
-										StringValue: value.toString(),
-									};
-								} else if (typeof value === 'object' && value !== null) {
-									const attr = value as any;
-									convertedAttributes[key] = {
-										DataType: attr.DataType || 'String',
-										StringValue: attr.StringValue || attr.value,
 									};
 								}
 							}
-							params.MessageAttributes = convertedAttributes;
-						} catch (error) {
-							throw new NodeOperationError(
-								this.getNode(),
-								`Invalid Message Attributes JSON: ${error instanceof Error ? error.message : 'Unknown error'}`,
-								{ itemIndex: i },
-							);
 						}
+						params.MessageAttributes = convertedAttributes;
 					}
 				}
 

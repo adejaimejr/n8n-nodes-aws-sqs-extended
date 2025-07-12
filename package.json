@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-sqs-pro",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "🚀 Professional AWS SQS node for n8n - Send & Delete messages from SQS queues with ease",
   "keywords": [
     "n8n-community-node-package",
