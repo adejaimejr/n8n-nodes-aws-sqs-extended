@@ -15,13 +15,13 @@ import { SQSClient, DeleteMessageCommand } from '@aws-sdk/client-sqs';
 
 export class AwsSqsDelete implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Delete Message',
+		displayName: 'AWS SQS Delete',
 		name: 'awsSqsExtendedDelete',
 		icon: 'file:awssqs-delete.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Delete messages from AWS SQS queues',
-		subtitle: 'Delete From Queue AWS SQS',
+		description: 'Delete From AWS SQS',
+		subtitle: 'Delete From AWS SQS',
 		defaults: {
 			name: 'AWS SQS Delete',
 		},

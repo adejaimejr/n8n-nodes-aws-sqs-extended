@@ -89,13 +89,16 @@ Delete messages from SQS queues after processing.
 
 Monitor SQS queues and trigger workflows when messages arrive.
 
+**Queue Input Options:**
+- **Select from List**: Auto-loads available queues from your AWS account
+- **Enter URL Manually**: Fallback option if auto-loading fails
+
 **Key Parameters:**
-- **Queue Selection**: Auto-loads available queues from your AWS account
-- **Polling Interval**: Configurable interval (seconds/minutes)
+- **Interval**: 🔄 How often to check the queue (frequency of polling cycles)
+- **Wait Time Seconds**: ⏱️ How long each call waits for messages (long polling efficiency)
 - **Delete Messages**: Disabled by default (safe monitoring)
 - **Visibility Timeout**: 30 seconds (message lock duration)
 - **Max Messages**: 1 message per poll (adjustable 1-10)
-- **Wait Time Seconds**: 20 seconds long polling (reduces API calls)
 
 ## Use Cases
 
@@ -148,12 +151,32 @@ Your AWS user needs the following permissions:
 
 ## Configuration
 
-### Understanding Wait Time Seconds
+### Understanding Interval vs Wait Time Seconds
 
-**Wait Time Seconds** é um parâmetro do AWS SQS que controla o **long polling**:
+São dois parâmetros independentes que trabalham juntos:
 
-- **0 segundos**: **Short polling** - Retorna imediatamente (pode retornar vazio mesmo tendo mensagens)
-- **1-20 segundos**: **Long polling** - Aguarda até X segundos por mensagens antes de retornar
+#### 🔄 **Interval (Intervalo de Polling)**
+- **Função**: Frequência entre verificações da fila
+- **Exemplo**: 30 segundos = nova verificação a cada 30 segundos
+- **Controla**: Quantas vezes por minuto o trigger executa
+
+#### ⏱️ **Wait Time Seconds (Long Polling)**
+- **Função**: Duração de cada chamada individual para o SQS
+- **Exemplo**: 20 segundos = cada chamada espera até 20s por mensagens
+- **Controla**: Eficiência de cada chamada específica
+
+#### 🎯 **Exemplo Prático:**
+- **Interval: 30s + Wait Time: 20s**
+- A cada 30 segundos → faz uma chamada que aguarda até 20s por mensagens
+- Se mensagens chegarem em 5s → retorna em 5s e aguarda 30s para próxima verificação
+- Se não houver mensagens → retorna em 20s e aguarda 30s para próxima verificação
+
+#### **Configuração para Long Polling:**
+
+**Wait Time Seconds** controla o long polling do AWS SQS:
+
+- **0 segundos**: **Short polling** - Retorna imediatamente (pode retornar vazio)
+- **1-20 segundos**: **Long polling** - Aguarda até X segundos por mensagens
 - **Recomendado**: **20 segundos** - Máxima eficiência e redução de custos
 
 **Benefícios do Long Polling:**
@@ -161,10 +184,6 @@ Your AWS user needs the following permissions:
 - ✅ Reduz latência na detecção de mensagens
 - ✅ Evita "empty receives" desnecessários
 - ✅ Melhor eficiência de recursos
-
-**Quando usar Short Polling (0s):**
-- ❌ Apenas se precisar de resposta imediata
-- ❌ Resulta em mais chamadas API e maior custo
 
 ### Error Handling
 

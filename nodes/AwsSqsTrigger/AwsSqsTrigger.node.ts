@@ -15,13 +15,13 @@ import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand, ListQueuesComma
 
 export class AwsSqsTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Queue Monitor',
+		displayName: 'AWS SQS Trigger',
 		name: 'awsSqsExtendedTrigger',
 		icon: 'file:awssqs-trigger.svg',
 		group: ['trigger'],
 		version: 1,
-		description: 'Trigger workflow when messages are received from AWS SQS',
-		subtitle: 'Receive From Queue AWS SQS',
+		description: 'Consumer AWS SQS',
+		subtitle: 'Consumer AWS SQS',
 		defaults: {
 			name: 'AWS SQS Trigger',
 		},
@@ -35,6 +35,23 @@ export class AwsSqsTrigger implements INodeType {
 		],
 		properties: [
 			{
+				displayName: 'Queue Input Method',
+				name: 'queueInputMethod',
+				type: 'options',
+				options: [
+					{
+						name: 'Select from List',
+						value: 'list',
+					},
+					{
+						name: 'Enter URL Manually',
+						value: 'manual',
+					},
+				],
+				default: 'list',
+				description: 'Choose how to specify the SQS queue',
+			},
+			{
 				displayName: 'Queue Name or ID',
 				name: 'queue',
 				type: 'options',
@@ -44,13 +61,32 @@ export class AwsSqsTrigger implements INodeType {
 				required: true,
 				default: '',
 				description: 'Select the SQS queue to monitor',
+				displayOptions: {
+					show: {
+						queueInputMethod: ['list'],
+					},
+				},
+			},
+			{
+				displayName: 'Queue URL',
+				name: 'queueUrl',
+				type: 'string',
+				required: true,
+				default: '',
+				placeholder: 'https://sqs.us-east-1.amazonaws.com/123456789012/your-queue-name',
+				description: 'The full URL of the SQS queue to monitor',
+				displayOptions: {
+					show: {
+						queueInputMethod: ['manual'],
+					},
+				},
 			},
 			{
 				displayName: 'Interval',
 				name: 'interval',
 				type: 'number',
 				default: 30,
-				description: 'Interval value which the queue will be checked for new messages',
+				description: '🔄 Frequency: How often to check the queue for new messages (independent of each call duration)',
 				typeOptions: {
 					minValue: 1,
 					maxValue: 999,
@@ -107,7 +143,7 @@ export class AwsSqsTrigger implements INodeType {
 				name: 'waitTimeSeconds',
 				type: 'number',
 				default: 20,
-				description: 'Long polling duration (0-20 seconds). Higher values reduce API calls but increase latency. 0 = short polling (immediate return), 20 = maximum efficiency.',
+				description: '⏱️ Per-call wait: How long each individual call waits for messages (0=instant return, 20=wait up to 20s for efficiency)',
 				typeOptions: {
 					minValue: 0,
 					maxValue: 20,
@@ -119,17 +155,16 @@ export class AwsSqsTrigger implements INodeType {
 	methods = {
 		loadOptions: {
 			async getQueues(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const credentials = await this.getCredentials('aws');
-				
-				const config = {
-					accessKeyId: credentials.accessKeyId as string,
-					secretAccessKey: credentials.secretAccessKey as string,
-					region: credentials.region as string,
-				};
-
-				const sqs = new SQSClient(config);
-
 				try {
+					const credentials = await this.getCredentials('aws');
+					
+					const config = {
+						accessKeyId: credentials.accessKeyId as string,
+						secretAccessKey: credentials.secretAccessKey as string,
+						region: credentials.region as string,
+					};
+
+					const sqs = new SQSClient(config);
 					const queues = await sqs.send(new ListQueuesCommand({}));
 					const returnData: INodePropertyOptions[] = [];
 
@@ -145,15 +180,24 @@ export class AwsSqsTrigger implements INodeType {
 
 					return returnData.sort((a, b) => a.name.localeCompare(b.name));
 				} catch (error) {
-					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-					throw new NodeOperationError(this.getNode(), `Failed to load queues: ${errorMessage}`);
+					// Return empty array if there's an error, allow manual input as fallback
+					console.error('Failed to load queues:', error);
+					return [];
 				}
 			},
 		},
 	};
 
 	async trigger(this: ITriggerFunctions): Promise<ITriggerResponse> {
-		const queueUrl = this.getNodeParameter('queue') as string;
+		const queueInputMethod = this.getNodeParameter('queueInputMethod') as string;
+		let queueUrl: string;
+		
+		if (queueInputMethod === 'manual') {
+			queueUrl = this.getNodeParameter('queueUrl') as string;
+		} else {
+			queueUrl = this.getNodeParameter('queue') as string;
+		}
+
 		const interval = this.getNodeParameter('interval') as number;
 		const unit = this.getNodeParameter('unit') as string;
 		const deleteMessages = this.getNodeParameter('deleteMessages', false) as boolean;
