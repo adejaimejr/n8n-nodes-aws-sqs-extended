@@ -1,5 +1,7 @@
 # n8n-nodes-aws-sqs-full
 
+![n8n AWS SQS Integration](assets/automate-without-limits.png)
+
 **Complete AWS SQS integration for n8n workflow automation**
 
 [![npm version](https://img.shields.io/npm/v/n8n-nodes-aws-sqs-full)](https://www.npmjs.com/package/n8n-nodes-aws-sqs-full)
@@ -283,7 +285,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## About
 
-Created by [Adejaime Junior](https://github.com/adejaimejr) for the n8n community.
+Created by [Adejaime Junior](https://github.com/adejaimejr) for the [n8n community](https://community.n8n.io/).
 
 ![GitHub stars](https://img.shields.io/github/stars/adejaimejr/n8n-nodes-aws-sqs-full?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/adejaimejr/n8n-nodes-aws-sqs-full?style=social)
