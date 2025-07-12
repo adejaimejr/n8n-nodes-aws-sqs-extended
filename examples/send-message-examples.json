@@ -1,0 +1,209 @@
+{
+  "name": "AWS SQS Send Examples",
+  "description": "Exemplos de uso do node AWS SQS Send",
+  "examples": [
+    {
+      "name": "Send Simple Message",
+      "description": "Enviar uma mensagem simples para fila SQS",
+      "configuration": {
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "messageBody": "Hello from n8n!",
+        "messageAttributes": "{}",
+        "delaySeconds": 0
+      },
+      "expectedOutput": {
+        "success": true,
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "messageId": "12345678-1234-1234-1234-123456789012",
+        "requestId": "abcd1234-5678-9012-3456-789012345678",
+        "timestamp": "2025-01-15T10:30:00.000Z"
+      }
+    },
+    {
+      "name": "Send Message with Attributes",
+      "description": "Enviar mensagem com atributos personalizados",
+      "configuration": {
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "messageBody": "Order processed",
+        "messageAttributes": "{\"OrderId\": \"12345\", \"Priority\": \"High\", \"Amount\": 199.99}",
+        "delaySeconds": 0
+      },
+      "expectedOutput": {
+        "success": true,
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "messageId": "12345678-1234-1234-1234-123456789012",
+        "requestId": "abcd1234-5678-9012-3456-789012345678",
+        "timestamp": "2025-01-15T10:30:00.000Z"
+      }
+    },
+    {
+      "name": "Send Delayed Message",
+      "description": "Enviar mensagem com atraso de 60 segundos",
+      "configuration": {
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "messageBody": "Delayed notification",
+        "messageAttributes": "{}",
+        "delaySeconds": 60
+      },
+      "expectedOutput": {
+        "success": true,
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "messageId": "12345678-1234-1234-1234-123456789012",
+        "requestId": "abcd1234-5678-9012-3456-789012345678",
+        "timestamp": "2025-01-15T10:30:00.000Z"
+      }
+    },
+    {
+      "name": "Send FIFO Message",
+      "description": "Enviar mensagem para fila FIFO",
+      "configuration": {
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo",
+        "messageBody": "FIFO order processing",
+        "messageAttributes": "{\"OrderId\": \"12345\"}",
+        "delaySeconds": 0,
+        "messageGroupId": "order-processing",
+        "messageDeduplicationId": "unique-order-12345"
+      },
+      "expectedOutput": {
+        "success": true,
+        "operation": "sendMessage",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo",
+        "messageId": "12345678-1234-1234-1234-123456789012",
+        "requestId": "abcd1234-5678-9012-3456-789012345678",
+        "timestamp": "2025-01-15T10:30:00.000Z"
+      }
+    },
+    {
+      "name": "Send Message Batch",
+      "description": "Enviar múltiplas mensagens em lote",
+      "configuration": {
+        "operation": "sendMessageBatch",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "messages": "[{\"id\": \"msg1\", \"messageBody\": \"First message\"}, {\"id\": \"msg2\", \"messageBody\": \"Second message\", \"messageAttributes\": {\"Priority\": \"High\"}}]"
+      },
+      "expectedOutput": {
+        "success": true,
+        "operation": "sendMessageBatch",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue",
+        "successful": [
+          {
+            "Id": "msg1",
+            "MessageId": "12345678-1234-1234-1234-123456789012",
+            "MD5OfBody": "5d41402abc4b2a76b9719d911017c592"
+          },
+          {
+            "Id": "msg2",
+            "MessageId": "87654321-4321-4321-4321-210987654321",
+            "MD5OfBody": "6d41402abc4b2a76b9719d911017c593"
+          }
+        ],
+        "failed": [],
+        "requestId": "abcd1234-5678-9012-3456-789012345678",
+        "timestamp": "2025-01-15T10:30:00.000Z"
+      }
+    },
+    {
+      "name": "Send FIFO Batch",
+      "description": "Enviar lote de mensagens para fila FIFO",
+      "configuration": {
+        "operation": "sendMessageBatch",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo",
+        "messages": "[{\"id\": \"msg1\", \"messageBody\": \"First FIFO message\", \"messageGroupId\": \"group1\", \"messageDeduplicationId\": \"dedup1\"}, {\"id\": \"msg2\", \"messageBody\": \"Second FIFO message\", \"messageGroupId\": \"group1\", \"messageDeduplicationId\": \"dedup2\"}]"
+      },
+      "expectedOutput": {
+        "success": true,
+        "operation": "sendMessageBatch",
+        "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue.fifo",
+        "successful": [
+          {
+            "Id": "msg1",
+            "MessageId": "12345678-1234-1234-1234-123456789012",
+            "MD5OfBody": "5d41402abc4b2a76b9719d911017c592",
+            "SequenceNumber": "18849496460467696128"
+          },
+          {
+            "Id": "msg2",
+            "MessageId": "87654321-4321-4321-4321-210987654321",
+            "MD5OfBody": "6d41402abc4b2a76b9719d911017c593",
+            "SequenceNumber": "18849496460467696129"
+          }
+        ],
+        "failed": [],
+        "requestId": "abcd1234-5678-9012-3456-789012345678",
+        "timestamp": "2025-01-15T10:30:00.000Z"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "name": "Order Processing Workflow",
+      "description": "Workflow completo de processamento de pedidos",
+      "nodes": [
+        {
+          "name": "Manual Trigger",
+          "type": "n8n-nodes-base.manualTrigger"
+        },
+        {
+          "name": "Process Order",
+          "type": "n8n-nodes-base.function",
+          "parameters": {
+            "functionCode": "// Simular processamento de pedido\nconst order = {\n  orderId: '12345',\n  customerId: 'customer_001',\n  amount: 199.99,\n  status: 'processed'\n};\n\nreturn [{\n  json: {\n    ...order,\n    timestamp: new Date().toISOString()\n  }\n}];"
+          }
+        },
+        {
+          "name": "Send to Queue",
+          "type": "n8n-nodes-sqs-pro",
+          "parameters": {
+            "operation": "sendMessage",
+            "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/order-processing",
+            "messageBody": "{{ JSON.stringify($json) }}",
+            "messageAttributes": "{\"OrderId\": \"{{ $json.orderId }}\", \"Priority\": \"High\"}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Batch Notification Workflow",
+      "description": "Envio de notificações em lote",
+      "nodes": [
+        {
+          "name": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "field": "minutes",
+                  "minutesInterval": 30
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Notifications",
+          "type": "n8n-nodes-base.function",
+          "parameters": {
+            "functionCode": "// Simular busca de notificações pendentes\nconst notifications = [\n  { id: 'notif1', userId: 'user1', message: 'Your order is ready!' },\n  { id: 'notif2', userId: 'user2', message: 'New message received' },\n  { id: 'notif3', userId: 'user3', message: 'Payment confirmed' }\n];\n\nreturn [{\n  json: {\n    messages: notifications.map((notif, index) => ({\n      id: `batch_${index}`,\n      messageBody: JSON.stringify(notif),\n      messageAttributes: {\n        UserId: notif.userId,\n        Type: 'notification'\n      }\n    }))\n  }\n}];"
+          }
+        },
+        {
+          "name": "Send Batch",
+          "type": "n8n-nodes-sqs-pro",
+          "parameters": {
+            "operation": "sendMessageBatch",
+            "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/notifications",
+            "messages": "{{ JSON.stringify($json.messages) }}"
+          }
+        }
+      ]
+    }
+  ]
+} 

@@ -1,4 +1,4 @@
-# 🚀 AWS SQS Pro - n8n Community Node
+# AWS SQS Pro - n8n Community Node
 
 <div align="center">
   <img src="https://github.com/adejaimejr/n8n-nodes-sqs-pro/raw/main/assets/automate-without-limits.png" alt="Automate without limits" width="600" />

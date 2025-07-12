@@ -46,12 +46,13 @@
     "README.md",
     "LICENSE"
   ],
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "nodes": [
-      "dist/nodes/AwsSqsDelete/AwsSqsDelete.node.js"
-    ]
-  },
+  	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"nodes": [
+			"dist/nodes/AwsSqsDelete/AwsSqsDelete.node.js",
+			"dist/nodes/AwsSqsSend/AwsSqsSend.node.js"
+		]
+	},
   "devDependencies": {
     "@types/node": "^18.16.16",
     "@typescript-eslint/parser": "~5.45",
