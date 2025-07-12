@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-sqs-pro",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "🚀 Professional AWS SQS node for n8n - Delete messages from SQS queues with ease",
   "keywords": [
     "n8n-community-node-package",
@@ -15,7 +15,7 @@
     "serverless"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-pro",
+  "homepage": "https://github.com/adejaimejr/n8n-nodes-sqs-pro",
   "author": {
     "name": "Adejaime Junior",
     "email": "adejaime.junior@gmail.com",
@@ -23,10 +23,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adejaimejr/n8n-nodes-aws-sqs-pro.git"
+    "url": "git+https://github.com/adejaimejr/n8n-nodes-sqs-pro.git"
   },
   "bugs": {
-    "url": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-pro/issues"
+    "url": "https://github.com/adejaimejr/n8n-nodes-sqs-pro/issues"
   },
   "engines": {
     "node": ">=16.0.0"
