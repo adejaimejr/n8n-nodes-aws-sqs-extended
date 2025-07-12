@@ -1,7 +1,7 @@
 {
-  "name": "n8n-nodes-sqs-pro",
-  "version": "0.1.1",
-  "description": "🚀 Professional AWS SQS nodes for n8n - Send, Delete & Trigger messages from SQS queues with ease. Complete package with 3 nodes.",
+  "name": "n8n-nodes-aws-sqs-full",
+  "version": "0.0.1",
+  "description": "🚀 Complete AWS SQS package for n8n - Send, Delete & Trigger messages from SQS queues with ease. Full package with 3 professional nodes.",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -14,10 +14,13 @@
     "delete",
     "trigger",
     "cloud",
-    "serverless"
+    "serverless",
+    "full",
+    "complete",
+    "package"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/adejaimejr/n8n-nodes-sqs-pro",
+  "homepage": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-full",
   "author": {
     "name": "Adejaime Junior",
     "email": "adejaime.junior@gmail.com",
@@ -25,10 +28,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adejaimejr/n8n-nodes-sqs-pro.git"
+    "url": "git+https://github.com/adejaimejr/n8n-nodes-aws-sqs-full.git"
   },
   "bugs": {
-    "url": "https://github.com/adejaimejr/n8n-nodes-sqs-pro/issues"
+    "url": "https://github.com/adejaimejr/n8n-nodes-aws-sqs-full/issues"
   },
   "engines": {
     "node": ">=16.0.0"
