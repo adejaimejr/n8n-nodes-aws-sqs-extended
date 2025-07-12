@@ -15,7 +15,7 @@ import * as AWS from 'aws-sdk';
 
 export class AwsSqsDelete implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Delete Full',
+		displayName: 'AWS SQS Delete',
 		name: 'awsSqsFullDelete',
 		icon: 'file:awssqs-delete.svg',
 		group: ['transform'],

@@ -5,13 +5,17 @@ import {
 	ITriggerFunctions,
 	ITriggerResponse,
 	NodeConnectionType,
+	IDataObject,
+	NodeOperationError,
+	ILoadOptionsFunctions,
+	INodePropertyOptions,
 } from 'n8n-workflow';
 
 import * as AWS from 'aws-sdk';
 
 export class AwsSqsTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Trigger Full',
+		displayName: 'AWS SQS Trigger',
 		name: 'awsSqsFullTrigger',
 		icon: 'file:awssqs-trigger.svg',
 		group: ['trigger'],
@@ -31,51 +35,146 @@ export class AwsSqsTrigger implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Queue URL',
-				name: 'queueUrl',
-				type: 'string',
+				displayName: 'Queue Name or ID',
+				name: 'queue',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getQueues',
+				},
 				required: true,
 				default: '',
-				placeholder: 'https://sqs.us-east-1.amazonaws.com/123456789012/my-queue',
-				description: 'The URL of the SQS queue to monitor',
+				description: 'Select the SQS queue to monitor',
 			},
 			{
-				displayName: 'Polling Interval (seconds)',
-				name: 'pollingInterval',
+				displayName: 'Interval',
+				name: 'interval',
 				type: 'number',
 				default: 30,
-				description: 'How often to check for new messages',
-				typeOptions: {
-					minValue: 10,
-					maxValue: 300,
-				},
-			},
-			{
-				displayName: 'Max Messages',
-				name: 'maxMessages',
-				type: 'number',
-				default: 1,
-				description: 'Maximum number of messages to retrieve per poll (1-10)',
+				description: 'Interval value which the queue will be checked for new messages',
 				typeOptions: {
 					minValue: 1,
-					maxValue: 10,
+					maxValue: 999,
 				},
 			},
 			{
-				displayName: 'Delete After Processing',
-				name: 'deleteAfterProcessing',
-				type: 'boolean',
-				default: true,
-				description: 'Whether to delete messages from the queue after processing',
+				displayName: 'Unit',
+				name: 'unit',
+				type: 'options',
+				options: [
+					{
+						name: 'Seconds',
+						value: 'seconds',
+					},
+					{
+						name: 'Minutes',
+						value: 'minutes',
+					},
+				],
+				default: 'seconds',
+				description: 'Unit of the interval value',
+			},
+			{
+				displayName: 'Options',
+				name: 'options',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				options: [
+					{
+						displayName: 'Delete Messages',
+						name: 'deleteMessages',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to delete messages after receiving them',
+					},
+					{
+						displayName: 'Visibility Timeout',
+						name: 'visibilityTimeout',
+						type: 'number',
+						default: 30,
+						description: 'The duration (in seconds) that the received messages are hidden from subsequent retrieve requests',
+						typeOptions: {
+							minValue: 0,
+							maxValue: 43200, // 12 hours max
+						},
+					},
+					{
+						displayName: 'Max Messages',
+						name: 'maxMessages',
+						type: 'number',
+						default: 1,
+						description: 'Maximum number of messages to retrieve per poll (1-10)',
+						typeOptions: {
+							minValue: 1,
+							maxValue: 10,
+						},
+					},
+					{
+						displayName: 'Wait Time Seconds',
+						name: 'waitTimeSeconds',
+						type: 'number',
+						default: 20,
+						description: 'The duration (in seconds) for which the call waits for a message to arrive (long polling)',
+						typeOptions: {
+							minValue: 0,
+							maxValue: 20,
+						},
+					},
+				],
 			},
 		],
 	};
 
+	methods = {
+		loadOptions: {
+			async getQueues(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const credentials = await this.getCredentials('aws');
+				
+				const config = {
+					accessKeyId: credentials.accessKeyId as string,
+					secretAccessKey: credentials.secretAccessKey as string,
+					region: credentials.region as string,
+				};
+
+				const sqs = new AWS.SQS(config);
+
+				try {
+					const queues = await sqs.listQueues().promise();
+					const returnData: INodePropertyOptions[] = [];
+
+					if (queues.QueueUrls) {
+						for (const queueUrl of queues.QueueUrls) {
+							const queueName = queueUrl.split('/').pop() || queueUrl;
+							returnData.push({
+								name: queueName,
+								value: queueUrl,
+							});
+						}
+					}
+
+					return returnData.sort((a, b) => a.name.localeCompare(b.name));
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+					throw new NodeOperationError(this.getNode(), `Failed to load queues: ${errorMessage}`);
+				}
+			},
+		},
+	};
+
 	async trigger(this: ITriggerFunctions): Promise<ITriggerResponse> {
-		const queueUrl = this.getNodeParameter('queueUrl') as string;
-		const pollingInterval = this.getNodeParameter('pollingInterval') as number;
-		const maxMessages = this.getNodeParameter('maxMessages') as number;
-		const deleteAfterProcessing = this.getNodeParameter('deleteAfterProcessing') as boolean;
+		const queueUrl = this.getNodeParameter('queue') as string;
+		const interval = this.getNodeParameter('interval') as number;
+		const unit = this.getNodeParameter('unit') as string;
+		const options = this.getNodeParameter('options') as IDataObject;
+
+		// Parse options with defaults
+		const deleteMessages = options.deleteMessages !== undefined ? options.deleteMessages as boolean : true;
+		const visibilityTimeout = options.visibilityTimeout as number || 30;
+		const maxMessages = options.maxMessages as number || 1;
+		const waitTimeSeconds = options.waitTimeSeconds as number || 20;
+
+		// Convert interval to milliseconds
+		const intervalMs = unit === 'minutes' ? interval * 60 * 1000 : interval * 1000;
 
 		const credentials = await this.getCredentials('aws');
 
@@ -92,7 +191,8 @@ export class AwsSqsTrigger implements INodeType {
 				const params: AWS.SQS.ReceiveMessageRequest = {
 					QueueUrl: queueUrl,
 					MaxNumberOfMessages: maxMessages,
-					WaitTimeSeconds: 20, // Long polling
+					WaitTimeSeconds: waitTimeSeconds,
+					VisibilityTimeout: visibilityTimeout,
 					MessageAttributeNames: ['All'],
 				};
 
@@ -107,26 +207,29 @@ export class AwsSqsTrigger implements INodeType {
 							MD5OfBody: message.MD5OfBody,
 							MessageAttributes: message.MessageAttributes || {},
 							Attributes: message.Attributes || {},
+							QueueUrl: queueUrl,
 						};
 
 						// Emit the message data
 						this.emit([[{ json: outputData }]]);
 
 						// Delete message if configured
-						if (deleteAfterProcessing && message.ReceiptHandle) {
+						if (deleteMessages && message.ReceiptHandle) {
 							try {
 								await sqs.deleteMessage({
 									QueueUrl: queueUrl,
 									ReceiptHandle: message.ReceiptHandle,
 								}).promise();
 							} catch (deleteError) {
-								console.error('Failed to delete message:', deleteError);
+								const errorMessage = deleteError instanceof Error ? deleteError.message : 'Unknown error';
+								console.error('Failed to delete message:', errorMessage);
 							}
 						}
 					}
 				}
 			} catch (error) {
-				console.error('Error polling SQS:', error);
+				const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+				console.error('Error polling SQS:', errorMessage);
 			}
 		};
 
@@ -134,7 +237,7 @@ export class AwsSqsTrigger implements INodeType {
 		pollForMessages();
 
 		// Set up interval
-		const intervalId = setInterval(pollForMessages, pollingInterval * 1000);
+		const intervalId = setInterval(pollForMessages, intervalMs);
 
 		// Return close function
 		return {

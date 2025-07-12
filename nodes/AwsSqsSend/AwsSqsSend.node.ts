@@ -18,7 +18,7 @@ import * as AWS from 'aws-sdk';
 
 export class AwsSqsSend implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'AWS SQS Send Full',
+		displayName: 'AWS SQS Send',
 		name: 'awsSqsFullSend',
 		icon: 'file:awssqs-send.svg',
 		group: ['transform'],
